@@ -1,62 +1,79 @@
+import json
 from agents.company_agent import generate_company_profile
 from agents.lead_agent import generate_lead_profile
 from agents.summary_agent import generate_combined_profile
 from agents.pitch_agent import generate_sales_pitch
-import json
+import re
+
+def get_single_line_json_input(prompt_title):
+    print(f"\n📌 {prompt_title}")
+    input_str = input("Enter JSON input in single line:\n")
+    try:
+        return json.loads(input_str)
+    except json.JSONDecodeError:
+        print("❌ Invalid JSON format. Please try again.")
+        return None
 
 def main():
-    # Step 1: Input company profile details
-    company_name = input("Enter the company name: ")
-    company_email = input("Enter the company email ID: ")
-    company_linkedin = input("Enter the company LinkedIn URL: ")
-    lead_name = input("Enter the lead name: ")
+    # Step 1: Get company details (single line JSON)
+    company_data = None
+    while company_data is None:
+        company_data = get_single_line_json_input("Step 1: Enter company and initial lead details JSON:")
 
-    # Step 2: Generate and display company profile
     company_profile = generate_company_profile(
-        company_name=company_name,
-        lead_name=lead_name,  # No lead info at this point
-        company_email=company_email,
-        company_linkedin=company_linkedin
+        company_name=company_data["company_name"],
+        lead_name=company_data["lead_name"],
+        company_email=company_data["company_email"],
+        company_linkedin=company_data["company_linkedin"]
     )
     print("\nCompany Profile:")
-    print(company_profile)
-    print("\n" + "="*50 + "\n")
+    print(json.dumps(company_profile, indent=2))
+    print("\n" + "=" * 60 + "\n")
 
-    # Step 3: Input lead profile details
-    lead_name = input("Enter the lead name: ")
-    lead_email = input("Enter the lead email ID: ")
-    lead_linkedin = input("Enter the lead LinkedIn URL: ")
+    # Step 2: Get lead details (single line JSON)
+    lead_data = None
+    while lead_data is None:
+        lead_data = get_single_line_json_input("Step 2: Enter lead details JSON:")
 
-    # Step 4: Generate and display lead profile
     lead_profile = generate_lead_profile(
-        lead_name=lead_name,
-        lead_email=lead_email,
-        lead_linkedin=lead_linkedin,
-        company_name=company_name
+        lead_name=lead_data["lead_name"],
+        lead_email=lead_data["lead_email"],
+        lead_linkedin=lead_data["lead_linkedin"],
+        company_name=company_data["company_name"]
     )
-    print("Lead Profile:")
-    print(lead_profile)
-    print("\n" + "="*50 + "\n")
+    print("\n Lead Profile:")
+    if isinstance(lead_profile, str):
+        cleaned_lead_profile = re.sub(r"json|", "", lead_profile).strip()
+        try:
+            lead_profile_json = json.loads(cleaned_lead_profile)
+            print(json.dumps(lead_profile_json, indent=2))
+        except json.JSONDecodeError:
+            print("⚠ Could not parse lead profile JSON correctly.")
+            print(cleaned_lead_profile)
+    else:
+        print(json.dumps(lead_profile, indent=2))
 
-    # Step 5: Generate and display combined summary
+    print("\n" + "=" * 60 + "\n")
+
+    # Step 3: Combined summary
     combined_summary = generate_combined_profile(
-        company_name=company_name,
-        lead_name=lead_name,
-        lead_email=lead_email,
-        lead_linkedin=lead_linkedin,
+        company_name=company_data["company_name"],
+        lead_name=lead_data["lead_name"],
+        lead_email=lead_data["lead_email"],
+        lead_linkedin=lead_data["lead_linkedin"]
     )
     print("Summary:")
     print(json.dumps(combined_summary, indent=2))
-    print("\n" + "=" * 50 + "\n")
+    print("\n" + "=" * 60 + "\n")
 
-    # Step 6: Generate and display sales pitch
+    # Step 4: Sales pitch
     sales_pitch = generate_sales_pitch(
-        company_name,
-        lead_name,
-        lead_email,
-        lead_linkedin
+        company_name=company_data["company_name"],
+        lead_name=lead_data["lead_name"],
+        lead_email=lead_data["lead_email"],
+        lead_linkedin=lead_data["lead_linkedin"]
     )
-    print("\nSales Pitch:\n")
+    print(" Sales Pitch:\n")
     print(sales_pitch)
 
 
